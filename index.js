@@ -1,5 +1,4 @@
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
-const qrcode = require('qrcode-terminal');
 const { GoogleGenAI } = require('@google/genai');
 
 // الـ API Key الرسمي والمجاني تبعك من Google AI Studio
@@ -11,12 +10,22 @@ async function startBot() {
 
     const sock = makeWASocket({
         auth: state,
-        printQRInTerminal: false
+        printQRInTerminal: false // إلغاء الـ QR كود
     });
 
+    // كود الربط عبر رقم الهاتف تلقائياً عند الحاجة
+    if (!sock.authState.creds.registered) {
+        setTimeout(async () => {
+            let phoneNumber = "963936286703"; // رقمك مع رمز الدولة بدون أصفار أو زائد
+            let code = await sock.requestPairingCode(phoneNumber);
+            console.log('\n==================================================');
+            console.log(`🔥 كود ربط الواتساب الخاص بك هو: ${code}`);
+            console.log('==================================================\n');
+        }, 3000);
+    }
+
     sock.ev.on('connection.update', (update) => {
-        const { connection, lastDisconnect, qr } = update;
-        if (qr) qrcode.generate(qr, { small: true });
+        const { connection, lastDisconnect } = update;
 
         if (connection === 'close') {
             const shouldReconnect = (lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut);
